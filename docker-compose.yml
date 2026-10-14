@@ -1,0 +1,5 @@
+services:
+  sciflowdiagram:
+    build: .
+    ports:
+      - "8080:80"

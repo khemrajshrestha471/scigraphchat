@@ -1,0 +1,616 @@
+@import 'tailwindcss';
+
+/* ---------------------------------------------------------------------- */
+/* Theme tokens — mirrors implementation/frontend's Tailwind theme exactly */
+/* (teal accent #00786f/#00695f, default Tailwind gray scale, system font) */
+/* ---------------------------------------------------------------------- */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #14b8a6;
+  --color-teal-600: #00786f;
+  --color-teal-700: #00695f;
+}
+
+:root {
+  --bg-page: var(--color-gray-50);
+  --bg-surface: #ffffff;
+  --bg-surface-raised: var(--color-gray-50);
+  --border: var(--color-gray-200);
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-600);
+  /* gray-400 measures 2.5:1 on white — fails WCAG AA's 4.5:1 for normal
+   * text. gray-500 (4.8:1) is the lightest gray that still passes here. */
+  --text-muted: var(--color-gray-500);
+  --edge-default: #9ca3af;
+  --edge-highlight: var(--color-teal-600);
+  --shadow-panel: 0 10px 30px -10px rgb(0 0 0 / 0.15);
+}
+
+:root.dark {
+  --bg-page: var(--color-gray-950);
+  --bg-surface: var(--color-gray-900);
+  --bg-surface-raised: var(--color-gray-800);
+  --border: var(--color-gray-800);
+  --text-primary: var(--color-gray-50);
+  --text-secondary: var(--color-gray-300);
+  /* gray-500 measures 3.7:1 on gray-900 — fails WCAG AA. gray-400 (7:1)
+   * passes comfortably. */
+  --text-muted: var(--color-gray-400);
+  --edge-default: #6b7280;
+  --edge-highlight: var(--color-teal-400);
+  --shadow-panel: 0 10px 30px -10px rgb(0 0 0 / 0.6);
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-teal-600);
+}
+:root.dark a {
+  color: var(--color-teal-400);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.icon {
+  flex-shrink: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-teal-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* App shell — the page itself scrolls vertically (no nested vertical      */
+/* scroll area); only the wide diagram canvas scrolls horizontally.        */
+/* ---------------------------------------------------------------------- */
+#app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.topbar {
+  @apply flex flex-wrap items-center gap-4 border-b px-4 py-2.5 sticky top-0 z-30;
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+
+.topbar__title {
+  @apply font-bold text-[15px] whitespace-nowrap;
+}
+.topbar__title-link {
+  @apply flex items-center gap-2;
+  color: inherit;
+  text-decoration: none;
+}
+.topbar__title .icon {
+  color: var(--color-teal-600);
+}
+:root.dark .topbar__title .icon {
+  color: var(--color-teal-400);
+}
+
+.btn {
+  @apply inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[13px] cursor-pointer transition-colors;
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+.btn:hover {
+  background: var(--bg-surface-raised);
+}
+.btn--icon {
+  @apply p-1.5;
+}
+
+/* Language toggle — a segmented control (not a native <select>, so it reads
+ * at a glance like the theme toggle it sits next to) that always shows both
+ * available languages, with the active one filled in teal. */
+.lang-toggle {
+  @apply inline-flex items-center gap-1 rounded-lg border p-1;
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+.lang-toggle__btn {
+  @apply rounded-md border-none bg-transparent px-2 py-1 text-[12px] font-semibold cursor-pointer transition-colors;
+  color: var(--text-secondary);
+}
+.lang-toggle__btn:hover {
+  background: var(--bg-surface-raised);
+}
+.lang-toggle__btn.is-active {
+  background: var(--color-teal-600);
+  color: white;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Intro                                                                   */
+/* ---------------------------------------------------------------------- */
+.intro {
+  /* Full-width background (so the row doesn't leave a bare page-background
+   * gap next to it) with an inner max-width wrapper just for the text, so
+   * paragraphs don't stretch edge-to-edge on wide screens. */
+  @apply px-4 py-5 sm:px-6 border-b;
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+.intro__inner {
+  /* Centered as a block on wide screens (mx-auto) — the paragraph text
+   * itself stays left-aligned, since center-justifying multi-line prose
+   * actively hurts readability (ragged edges on both sides make it harder
+   * for the eye to find the start of the next line). */
+  @apply max-w-4xl mx-auto;
+}
+.intro p {
+  @apply text-[13.5px] leading-relaxed mb-2.5 last:mb-0;
+  color: var(--text-secondary);
+}
+.intro strong {
+  color: var(--text-primary);
+}
+.intro__legend {
+  @apply flex flex-wrap gap-x-6 gap-y-2 mt-1;
+}
+.intro__legend-item {
+  @apply inline-flex items-center gap-2 text-[12.5px];
+  color: var(--text-secondary);
+}
+.intro__legend-line {
+  stroke: var(--edge-highlight);
+  stroke-width: 2;
+}
+.intro__legend-line--dashed {
+  stroke-dasharray: 4 3;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Stepper                                                                 */
+/* ---------------------------------------------------------------------- */
+.stepper {
+  @apply flex flex-wrap justify-center gap-2 px-4 py-2.5 border-b;
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+
+.step-btn {
+  @apply rounded-full border px-3 py-1.5 text-[12.5px] cursor-pointer whitespace-nowrap transition-colors;
+  background: var(--bg-surface);
+  border-color: var(--border);
+  color: var(--text-secondary);
+}
+.step-btn:hover {
+  border-color: var(--color-teal-500);
+}
+.step-btn.is-active {
+  background: var(--color-teal-600);
+  border-color: var(--color-teal-600);
+  @apply text-white font-semibold;
+}
+
+.step-caption {
+  @apply px-4 py-2.5 text-[13px] text-center border-b hidden;
+  color: var(--text-secondary);
+  background: var(--bg-surface-raised);
+  border-color: var(--border);
+}
+.step-caption.is-visible {
+  @apply block;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Stage: diagram (canvas or stacked) + detail panel                       */
+/* ---------------------------------------------------------------------- */
+.stage {
+  @apply flex-1 flex items-start min-w-0;
+}
+
+/* Desktop canvas mode: a wide, free-form drag surface. Only scrolls
+ * horizontally within itself — vertical overflow is handled by the page. */
+.canvas-wrap {
+  /* Padding insets the whole diagram from the scroll container's edges —
+   * .canvas is a normal block child (not itself absolutely positioned), so
+   * every absolutely-positioned box/card inside it shifts along with it for
+   * free, no coordinate recalculation needed. */
+  @apply flex-1 min-w-0 overflow-x-auto overflow-y-visible relative p-5;
+  background-image: radial-gradient(var(--border) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.canvas {
+  /* Centers the diagram within its scroll area on screens wide enough that
+   * it doesn't need to scroll at all, instead of always hugging the left
+   * edge and leaving a lopsided gap before the panel. Auto margins have no
+   * effect once the content is wide enough to need scrolling (it simply
+   * can't go negative), so this is free on narrower screens too. */
+  @apply relative mx-auto;
+}
+
+.edges {
+  /* Explicit stacking above .category-box/.node-card (both z-index:auto,
+   * so DOM order would otherwise decide — and this svg is their *first*
+   * sibling, meaning their own opaque/tinted backgrounds paint over it).
+   * pointer-events-none means raising it never steals clicks/drags from
+   * the cards underneath. */
+  @apply absolute top-0 left-0 z-10 pointer-events-none overflow-visible;
+}
+
+.category-box {
+  @apply absolute rounded-lg border-[1.5px] p-2;
+  border-color: var(--cat-color, var(--border));
+  background: color-mix(in srgb, var(--cat-color, var(--color-gray-400)) 6%, var(--bg-surface));
+}
+
+.category-box__header {
+  @apply flex items-start gap-1.5 mb-1.5;
+}
+.category-box__header .icon {
+  color: var(--cat-color);
+  @apply mt-px;
+}
+.category-box__title {
+  @apply font-bold text-[12px] leading-tight;
+}
+.category-box__desc {
+  @apply text-[10px] leading-snug mt-px;
+  color: var(--text-secondary);
+}
+
+.node-card {
+  @apply absolute flex items-center gap-1.5 rounded-md border px-1.5 py-1 cursor-grab select-none transition-[opacity,box-shadow,border-color];
+  border-color: var(--border);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.04);
+}
+.node-card:active {
+  @apply cursor-grabbing;
+}
+.node-card .icon {
+  color: var(--cat-color, var(--text-secondary));
+}
+.node-card__text {
+  @apply min-w-0;
+}
+.node-card__title {
+  @apply text-[11px] font-semibold leading-tight whitespace-nowrap overflow-hidden text-ellipsis;
+}
+.node-card__slug {
+  @apply text-[10px] whitespace-nowrap overflow-hidden text-ellipsis;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.node-card:hover,
+.node-card:focus-visible {
+  border-color: var(--cat-color, var(--color-teal-500));
+}
+
+.node-card.is-selected {
+  border-color: var(--color-teal-600);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-teal-600) 35%, transparent);
+}
+:root.dark .node-card.is-selected {
+  border-color: var(--color-teal-400);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-teal-400) 35%, transparent);
+}
+
+.node-card.is-connected {
+  border-color: var(--cat-color, var(--color-teal-500));
+}
+
+.canvas.has-focus .node-card:not(.is-selected):not(.is-connected) {
+  opacity: 0.35;
+}
+.canvas.has-focus .category-box {
+  opacity: 0.6;
+}
+.canvas.has-focus .category-box.has-active-node {
+  opacity: 1;
+}
+
+.edge {
+  fill: none;
+  stroke: var(--edge-default);
+  stroke-width: 1.5;
+  /* Hidden until a node is hovered/focused/selected — see
+   * .edge--highlight below. With ~30 edges always visible at once the
+   * diagram read as a tangle; showing only the relevant connections for
+   * whatever's currently focused is both clearer and matches the request
+   * to reveal connections on demand rather than all the time. */
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+.edge--dashed {
+  stroke-dasharray: 5 4;
+}
+/* Connections between two nodes in the *same* category box stay visible
+ * at rest, unlike the hidden-until-hover edges above — a short local flow
+ * within one box, not part of the wider cross-box tangle opacity-0 tames. */
+.edge--intra {
+  opacity: 1;
+}
+.edge--highlight {
+  stroke: var(--edge-highlight);
+  stroke-width: 2.4;
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Detail panel — a sticky sidebar on desktop (stays in view as the wide   */
+/* canvas scrolls under it), a bottom sheet on narrow screens.             */
+/* ---------------------------------------------------------------------- */
+.panel {
+  /* A proper rounded-corner card (border on all 4 sides, not just a flush
+   * left divider) inset from the canvas with real margin on every side —
+   * reads as a distinct, "formal" content block rather than a sidebar
+   * bolted to the edge. Widened and given more internal padding so it
+   * doesn't look sparse against that visible breathing room. */
+  @apply flex-shrink-0 w-[300px] rounded-2xl border overflow-y-auto p-5 sticky my-5 mr-5;
+  background: var(--bg-surface);
+  border-color: var(--border);
+  top: calc(49px + 1.25rem);
+  max-height: calc(100dvh - 49px - 2.5rem);
+}
+
+.panel__empty {
+  @apply text-[13.5px] leading-relaxed text-center mt-10;
+  color: var(--text-muted);
+}
+
+.panel__header {
+  /* pr reserves room so the title never wraps underneath the close button,
+   * which is always absolutely positioned top-right of the panel now
+   * (desktop and mobile alike), not just shown on the mobile bottom sheet. */
+  @apply flex items-start gap-2.5 mb-1 pr-8;
+}
+.panel__header .icon {
+  color: var(--cat-color, var(--color-teal-600));
+  @apply mt-0.5;
+}
+.panel__title {
+  @apply text-xl font-bold leading-tight;
+}
+.panel__slug {
+  @apply text-[11.5px] mb-3.5;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.panel__category {
+  @apply inline-flex items-center gap-1.5 text-[11px] font-semibold rounded-full px-2 py-1 mb-3.5;
+  color: var(--cat-color);
+  background: color-mix(in srgb, var(--cat-color) 14%, transparent);
+}
+
+.panel__summary {
+  @apply text-[15px] font-semibold leading-relaxed mb-3;
+}
+.panel__desc,
+.panel__fits {
+  @apply text-[14.5px] leading-relaxed mb-3.5;
+  color: var(--text-secondary);
+}
+
+.panel__section-title {
+  @apply text-[11px] font-bold tracking-wide uppercase mt-4.5 mb-2;
+  color: var(--text-muted);
+}
+
+.panel__list {
+  @apply list-none m-0 p-0 flex flex-col gap-1.5;
+}
+.panel__list button {
+  @apply bg-transparent border-none p-0 text-left text-[13px] cursor-pointer underline decoration-transparent transition-[text-decoration-color];
+  color: var(--color-teal-600);
+}
+:root.dark .panel__list button {
+  color: var(--color-teal-400);
+}
+.panel__list button:hover {
+  text-decoration-color: currentColor;
+}
+
+.panel__tech {
+  @apply mt-4.5 border-t pt-3;
+  border-color: var(--border);
+}
+.panel__tech-toggle {
+  @apply flex items-center gap-1.5 bg-transparent border-none p-0 text-xs font-semibold cursor-pointer;
+  color: var(--text-secondary);
+}
+.panel__tech-toggle .icon {
+  @apply transition-transform;
+}
+.panel__tech-toggle.is-open .icon {
+  transform: rotate(180deg);
+}
+.panel__tech-list {
+  @apply list-none mt-2.5 p-0 hidden flex-col gap-1.5;
+}
+.panel__tech-list.is-open {
+  @apply flex;
+}
+.panel__tech-list li {
+  @apply text-xs rounded-md px-2 py-1.5 leading-snug break-words;
+  color: var(--text-secondary);
+  background: var(--bg-surface-raised);
+  font-family: var(--font-mono);
+}
+
+.panel__close {
+  /* Always shown (not just on the mobile bottom sheet) — deselecting via
+   * the X clears the detail panel and, via the same diagram.onSelect path
+   * a node click uses, also resets the URL hash back to the page's own
+   * address (see main.ts). */
+  @apply flex items-center justify-center absolute top-3 right-3 w-[28px] h-[28px] rounded-full border cursor-pointer transition-colors;
+  border-color: var(--border);
+  background: var(--bg-surface);
+}
+.panel__close:hover {
+  background: var(--bg-surface-raised);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Glossary                                                                 */
+/* ---------------------------------------------------------------------- */
+.glossary {
+  @apply border-t px-4 py-6 sm:px-6;
+  background: var(--bg-surface);
+  border-color: var(--border);
+}
+.glossary__title {
+  @apply text-base font-bold mb-1;
+}
+.glossary__intro {
+  @apply text-[13px] mb-4;
+  color: var(--text-secondary);
+}
+.glossary__grid {
+  @apply grid gap-3 m-0;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.glossary__card {
+  @apply rounded-lg border p-3;
+  border-color: var(--border);
+  background: var(--bg-surface-raised);
+}
+/* A card whose term also appears as a box in the flow diagram above —
+ * rendered as a real <button> so it's reachable and activatable exactly
+ * like any other control, not a div with a click handler bolted on. */
+.glossary__card--linked {
+  @apply text-left w-full cursor-pointer;
+}
+.glossary__term {
+  @apply flex items-center gap-1.5 text-[13px] font-bold mb-1;
+}
+.glossary__link-hint {
+  @apply inline-flex items-center gap-1 text-[10.5px] font-normal;
+  color: var(--color-teal-600);
+}
+:root.dark .glossary__link-hint {
+  color: var(--color-teal-400);
+}
+.glossary__def {
+  @apply text-[12.5px] leading-relaxed m-0;
+  color: var(--text-secondary);
+}
+.glossary__external-link {
+  @apply inline-flex items-center gap-1 text-[11px] mt-2;
+  color: var(--color-teal-600);
+}
+:root.dark .glossary__external-link {
+  color: var(--color-teal-400);
+}
+.glossary__external-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Stacked mode (narrow screens) — no canvas, no drag, no SVG edges: a     */
+/* plain vertical list of categories, each listing its nodes.             */
+/* ---------------------------------------------------------------------- */
+.stacked {
+  @apply flex-1 min-w-0 relative flex flex-col gap-3 p-3;
+}
+/* Overlays the whole stacked list; draws a connector only when a row is
+ * selected (same hidden-by-default / .edge--highlight-to-reveal approach
+ * as the desktop canvas's SVG, reusing the same .edge classes). */
+.stacked-edges {
+  @apply absolute top-0 left-0 w-full pointer-events-none overflow-visible;
+  z-index: 1;
+}
+.stacked-category {
+  @apply rounded-xl border-[1.5px] p-3;
+  border-color: var(--cat-color, var(--border));
+  background: color-mix(in srgb, var(--cat-color, var(--color-gray-400)) 6%, var(--bg-surface));
+}
+.stacked-category__header {
+  @apply flex items-start gap-2 mb-2.5;
+}
+.stacked-category__header .icon {
+  color: var(--cat-color);
+  @apply mt-0.5;
+}
+.stacked-category__title {
+  @apply font-bold text-sm leading-tight;
+}
+.stacked-category__desc {
+  @apply text-xs leading-snug mt-0.5;
+  color: var(--text-secondary);
+}
+.stacked-node-list {
+  @apply flex flex-col gap-1.5;
+}
+.stacked-node {
+  @apply w-full flex items-center gap-2.5 rounded-lg border p-2.5 text-left cursor-pointer transition-colors;
+  border-color: var(--border);
+  background: var(--bg-surface);
+}
+.stacked-node .icon {
+  color: var(--cat-color, var(--text-secondary));
+}
+.stacked-node:hover,
+.stacked-node:focus-visible {
+  border-color: var(--cat-color, var(--color-teal-500));
+}
+.stacked-node.is-selected {
+  border-color: var(--color-teal-600);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-teal-600) 35%, transparent);
+}
+:root.dark .stacked-node.is-selected {
+  border-color: var(--color-teal-400);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-teal-400) 35%, transparent);
+}
+.stacked-node__title {
+  @apply text-[13px] font-semibold leading-tight;
+}
+.stacked-node__slug {
+  @apply text-[10.5px];
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+.stacked-node__arrow-hint {
+  @apply text-[11px] mt-1 flex flex-wrap gap-x-1;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Responsive: below this width, switch to stacked mode and the detail     */
+/* panel becomes a bottom sheet instead of a sticky sidebar.               */
+/* ---------------------------------------------------------------------- */
+@media (max-width: 860px) {
+  .stage {
+    @apply flex-col;
+  }
+  .panel {
+    /* Flush bottom sheet — reset the desktop card's margin and bottom
+     * rounding, which would otherwise leave a gap at the screen edges and
+     * two pointlessly-rounded corners sitting below the visible viewport. */
+    @apply fixed inset-x-0 bottom-0 top-auto w-auto m-0 border-l-0 border-t rounded-t-2xl rounded-b-none z-40;
+    max-height: 65dvh;
+    box-shadow: var(--shadow-panel);
+    transform: translateY(100%);
+    transition: transform 0.2s ease;
+  }
+  .panel.is-open {
+    transform: translateY(0);
+  }
+}
