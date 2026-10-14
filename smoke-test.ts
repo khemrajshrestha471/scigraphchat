@@ -357,6 +357,77 @@ async function main() {
     console.log('    NOTE: this must still be confirmed by hand in a real browser before publishing.');
   }
 
+  // --- dragging far past the canvas's own extent is clamped, not left to
+  // overflow into where the (separate, sibling) detail panel sits ---
+  const canvasEl = diagramRoot.querySelector<HTMLElement>('.canvas')!;
+  const canvasMaxX = parseFloat(canvasEl.style.width);
+  const canvasMaxY = parseFloat(canvasEl.style.height);
+  const dragWidth = parseFloat(dragTarget.style.width);
+  const dragHeight = parseFloat(dragTarget.style.height);
+  dragTarget.dispatchEvent(
+    new dom.window.MouseEvent('mousedown', { bubbles: true, clientX: 150, clientY: 80, button: 0, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mousemove', { bubbles: true, clientX: 999999, clientY: 999999, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mouseup', { bubbles: true, clientX: 999999, clientY: 999999, ...mouseOpts })
+  );
+  const clampedLeft = parseFloat(dragTarget.style.left);
+  const clampedTop = parseFloat(dragTarget.style.top);
+  check(
+    "dragging far past the canvas clamps x to the canvas's own right edge, never beyond it",
+    clampedLeft === canvasMaxX - dragWidth
+  );
+  check(
+    "dragging far past the canvas clamps y to the canvas's own bottom edge, never beyond it",
+    clampedTop === canvasMaxY - dragHeight
+  );
+
+  // --- a second drag gesture on an already-moved card continues from its
+  // actual current position, not its original default-layout position
+  // (regression test for a real bug: d3-drag's default "subject" is the
+  // bound datum, whose x/y never get updated after a drag, so a second
+  // drag would restart its math from stale original coordinates and the
+  // card would visibly snap back before following the pointer again) ---
+  const secondDragTarget = diagramRoot.querySelector<HTMLElement>('[data-node-id="rate-limiter"]')!;
+  const originalLeft = parseFloat(secondDragTarget.style.left);
+  const originalTop = parseFloat(secondDragTarget.style.top);
+  secondDragTarget.dispatchEvent(
+    new dom.window.MouseEvent('mousedown', { bubbles: true, clientX: 20, clientY: 20, button: 0, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mousemove', { bubbles: true, clientX: 320, clientY: 220, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mouseup', { bubbles: true, clientX: 320, clientY: 220, ...mouseOpts })
+  );
+  const afterFirstLeft = parseFloat(secondDragTarget.style.left);
+  const afterFirstTop = parseFloat(secondDragTarget.style.top);
+  check('first drag actually moved the node away from its original position', afterFirstLeft !== originalLeft || afterFirstTop !== originalTop);
+
+  // mousedown starts from a totally different absolute pointer location this
+  // time, moved by only a small (+5,+5) delta
+  secondDragTarget.dispatchEvent(
+    new dom.window.MouseEvent('mousedown', { bubbles: true, clientX: 900, clientY: 700, button: 0, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mousemove', { bubbles: true, clientX: 905, clientY: 705, ...mouseOpts })
+  );
+  dom.window.dispatchEvent(
+    new dom.window.MouseEvent('mouseup', { bubbles: true, clientX: 905, clientY: 705, ...mouseOpts })
+  );
+  const afterSecondLeft = parseFloat(secondDragTarget.style.left);
+  const afterSecondTop = parseFloat(secondDragTarget.style.top);
+  check(
+    'a second drag gesture moves the card by exactly its own small delta from where it already was (continuous)',
+    afterSecondLeft === afterFirstLeft + 5 && afterSecondTop === afterFirstTop + 5
+  );
+  check(
+    "that result is clearly not the original pre-drag position plus the small delta (the bug this guards against)",
+    afterSecondLeft !== originalLeft + 5 || afterSecondTop !== originalTop + 5
+  );
+
   console.log('\n--- 6. Dragged position persists across re-init (localStorage) ---');
   const draggedLeft = dragTarget.style.left;
   const diagramRoot2 = document.createElement('div');

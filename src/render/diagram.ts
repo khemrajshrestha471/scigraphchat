@@ -250,15 +250,36 @@ function buildCanvas(root: HTMLElement, fireSelect: (id: string | null) => void,
 
   const drag = d3
     .drag<HTMLDivElement, NodePosition>()
+    // Without this, d3-drag's default subject is the bound datum `d` itself
+    // — i.e. nodePositions[i], which holds the *original* default-layout
+    // x/y and is never updated once a card is dragged (only the `positions`
+    // Map and the DOM style are). Every drag gesture's event.x/y is
+    // computed relative to whatever the subject's x/y were, so without
+    // this override, a *second* drag on an already-moved card would start
+    // measuring from its stale original position instead of where it
+    // actually is now — visible as the card snapping back before it starts
+    // following the pointer. Returning the live position here instead
+    // keeps every new gesture continuous with wherever the card currently is.
+    .subject((_event, d) => {
+      const p = positions.get(d.id) ?? { x: d.x, y: d.y };
+      return { x: p.x, y: p.y };
+    })
     .on('start', function () {
       d3.select(this).raise();
     })
     .on('drag', function (event, d) {
-      // Clamp to non-negative coordinates — the canvas only ever grows to
-      // fit the *maximum* extent of dragged nodes, so a node dragged into
-      // negative space would end up permanently unreachable: nothing
-      // reserves scrollable room to the left/above the canvas's own origin.
-      const next = { x: Math.max(0, event.x), y: Math.max(0, event.y) };
+      // Clamp to the canvas's own box on every side — not just non-negative
+      // (lower bound: the canvas only ever grows to fit the *maximum*
+      // extent of dragged nodes, so negative space is never reachable
+      // again), but also capped at maxX/maxY (upper bound: the detail
+      // panel is a separate flex sibling to the right of this scrollable
+      // canvas-wrap, not part of it, so a card dragged past the canvas's
+      // own right/bottom edge doesn't just need scrolling — it ends up
+      // rendered underneath the panel, invisible and unreachable).
+      const next = {
+        x: Math.min(Math.max(0, event.x), maxX - d.width),
+        y: Math.min(Math.max(0, event.y), maxY - d.height),
+      };
       positions.set(d.id, next);
       this.style.left = `${next.x}px`;
       this.style.top = `${next.y}px`;
